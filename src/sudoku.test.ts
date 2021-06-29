@@ -34,23 +34,110 @@ describe('merge', () => {
   });
 });
 
-const getColumnData = (sudokuPuzzle: Puzzle, column: number, rowSize: number) => {
+const getColumnData = <T>(arr: T[], rowSize: number, column: number) => {
+  if (rowSize < 0 || column < 0) {
+    return [];
+  }
   let columnData = [];
   let pos = column;
-  while (pos < sudokuPuzzle.length) {
-    columnData.push(sudokuPuzzle[pos])
+  while (pos < arr.length) {
+    columnData.push(arr[pos])
     pos = pos + rowSize;
   }
   return columnData;
 }
 
-const isValidRow = (sudokuPuzzle: Puzzle, row: number): Boolean => 
-  areAllSomesUnique(sudokuPuzzle.slice(row*9, 9));
+describe('getColumnData', () => {
+  test('returns empty array for various combinations', () => {
+    expect(getColumnData([], 0, 0)).toEqual([]);
+    expect(getColumnData([], 1, 1)).toEqual([]);
+    expect(getColumnData([], 1, 1)).toEqual([]);
+    expect(getColumnData([], -1, 0)).toEqual([]);
+    expect(getColumnData([], 0, -1)).toEqual([]);
+  });
 
-const isValidColumn = (sudokuPuzzle: Puzzle, column: number): Boolean => 
-  areAllSomesUnique(getColumnData(sudokuPuzzle, column, 9));
+  test('returns expected column data', () => {
+    const matrix = [0, 1, 2, 3,
+                    10, 11, 12, 13,
+                    20, 21, 22, 23];
 
-const isValidSquare = (sudokuPuzzle: Puzzle, square: number): Boolean => {
+    expect(getColumnData(matrix, 4, 0)).toEqual([0,10, 20]);
+    expect(getColumnData(matrix, 4, 1)).toEqual([1, 11, 21]);
+    expect(getColumnData(matrix, 4, 3)).toEqual([3, 13, 23]);
+  })
+});
+
+
+const getRowData = <T>(arr: T[], rowSize: number, row: number) =>
+  arr.slice(row*rowSize, (row+1)*rowSize)
+
+
+describe('getColumnData', () => {
+  test('returns empty array for various combinations', () => {
+    expect(getRowData([], 0, 0)).toEqual([]);
+    expect(getRowData([], 1, 0)).toEqual([]);
+    expect(getRowData([], 0, 1)).toEqual([]);
+  });
+
+  test('returns expected row data', () => {
+    const matrix = [0, 1, 2, 3,
+                    10, 11, 12, 13,
+                    20, 21, 22, 23];
+    expect(getRowData(matrix, 4, 0)).toEqual([0,1,2,3]);
+    expect(getRowData(matrix, 4, 1)).toEqual([10, 11,12,13]);
+    expect(getRowData(matrix, 4, 2)).toEqual([20, 21, 22, 23]);
+  })
+})
+
+const isValidRow = (sudokuPuzzle: Puzzle, rowSize: number, row: number): Boolean => 
+  areAllSomesUnique(getRowData(sudokuPuzzle, rowSize, row));
+
+const isValidColumn = (sudokuPuzzle: Puzzle, rowSize: number, column: number): Boolean => 
+  areAllSomesUnique(getColumnData(sudokuPuzzle, rowSize, column));
+
+
+const isValid = (puzzle, rows, columns) => {
+  const rowsValid = (new Array(rows).fill(0))
+    .reduce(
+      (acc, next, i)=> acc && isValidRow(puzzle, rows, i), 
+      true);
+  const columnsValid = (new Array(columns).fill(0))
+    .reduce(
+      (acc, next, i)=> acc && isValidColumn(puzzle, rows, i), 
+      true);
+  return rowsValid && columnsValid;
+}
+
+
+describe('Work on a square', () => {
+  test('a simple square test', () => {
+    const matrix = [1, 2, 3,
+                    2, 3, 1,
+                    3, 1, 2];
+    const liftedmatrix = matrix.map(x => option(x));
+
+    for (let x=0;x<2;x++) {
+      expect(isValidRow(liftedmatrix, 3, x)).toEqual(true);
+      expect(isValidColumn(liftedmatrix, 3, x)).toEqual(true);
+    }
+  });
+
+
+
+  test('isValid', () => {
+
+    const matrix = 
+      [1, 2, 3,
+        2, 3, 1,
+        3, 1, 2];
+
+    const liftedmatrix = matrix.map(x => option(x));
+    expect(isValid(liftedmatrix,3,3)).toEqual(true);
+  })
+
+})
+
+const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
   const startPos = (square%3)* 27 + (square%3 * 3);
   const secondRowShift = 9;
   const thirdRowShift = 18;
@@ -59,12 +146,16 @@ const isValidSquare = (sudokuPuzzle: Puzzle, square: number): Boolean => {
     sudokuPuzzle.slice(startPos, 3)
     .concat(sudokuPuzzle.slice(startPos + secondRowShift, 3))
     .concat(sudokuPuzzle.slice(startPos + thirdRowShift, 3));
+  return squareData;
+}
 
+const isValidSquare = (sudokuPuzzle: Puzzle, square: number): Boolean => {
+  const squareData = getSquareData(sudokuPuzzle, square);
   return areAllSomesUnique(squareData);
 }
 
 const reducer = <T>(acc: T[], next: Option<T>) => 
-  next.map(n => [...acc, n]).getOrElse(()=>acc);
+  next.map<T[]>(n => [...acc, n]).getOrElse(()=>acc);
 
 const areAllSomesUnique = (a: Option<number>[]): Boolean => {
   let start : number[] = [];
@@ -72,21 +163,18 @@ const areAllSomesUnique = (a: Option<number>[]): Boolean => {
   return areAllElementsUnique(somes);
 };
 
-const arbArrayWithRepeats: Arbitrary<number[]> = 
-  fc.array(fc.integer(), {minLength: 1})
-  .chain(a => fc.tuple(fc.constant(a), fc.integer({min:a.length+1, max:a.length*2})))
-  .chain(x => {
-    const seedArray = x[0];
-    const arrayLength = x[1];
-    return fc.tuple(
+const arbArrayWithRepeats = <T>(arb: Arbitrary<T>): Arbitrary<T[]> => 
+  fc.array(arb, {minLength: 1})
+  .chain(arbs => fc.tuple(
+    fc.constant(arbs), 
+    fc.integer({min:arbs.length+1, max:arbs.length*2})))
+  .chain(([seedArray, arrayLength]) => 
+    fc.tuple(
       fc.constant(seedArray), 
       fc.array(fc.integer({min:0, max:seedArray.length - 1}), {minLength:arrayLength, maxLength: arrayLength}))
-  })
-  .map(x => {
-    const seedArray = x[0];
-    const positions = x[1];
-    return positions.map(i => seedArray[i])
-  });
+  )
+  .map(([seedArray, positions]) =>
+    positions.map(i => seedArray[i]) );
 
 const areAllElementsUnique = (a: number[])=>
   (new Set<number>(a).size) === a.length;
@@ -99,10 +187,11 @@ describe('areAllElementsUnique', () => {
   })
 
   test('returns false when there are duplicates', () => {
-    fc.assert(fc.property(arbArrayWithRepeats, (a) => {
-      console.log(a);
+    fc.assert(fc.property(arbArrayWithRepeats(fc.integer()), (a) => {
       expect(areAllElementsUnique(a)).toEqual(false);
     }));
   })
 })
 
+
+export {isValid, merge};
