@@ -72,7 +72,7 @@ describe('traverse tree', () => {
     let root: Node = [];
     const puzzle = new Array(9).fill(none);
     const getChildrenLocal = (n: Node): Generator<Node, any, boolean> => getChildren(1, 3, puzzle, n);
-    const isValidLocal = (n: number[]) => {return isValid(merge(puzzle, n), 3, 3)};
+    const isValidLocal = (n: number[]) => {return isValid({data: merge(puzzle, n), columns: 3})};
     const isSolutionLocal = (n: number[]) => isSolution(n, puzzle);
     let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
     console.log({iterations, leafNodeCount, solution })

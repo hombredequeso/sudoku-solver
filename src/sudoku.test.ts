@@ -6,6 +6,24 @@ type Place = Option<number>;
 type Puzzle = Place[];
 type SolutionTree = number[];
 
+interface Matrix<T> {
+  data: T[]; 
+  columns: number
+}
+
+const getColumn= <T>(m: Matrix<T>, column: number) => {
+  if (m.columns < 0 || column < 0) {
+    return [];
+  }
+  let columnData = [];
+  let pos = column;
+  while (pos < m.data.length) {
+    columnData.push(m.data[pos])
+    pos = pos + m.columns;
+  }
+  return columnData;
+}
+
 const merge = (puzzle: Puzzle, solutionTree: SolutionTree): Puzzle => 
   puzzle.map((p,i) => 
     i < solutionTree.length ?
@@ -34,76 +52,66 @@ describe('merge', () => {
   });
 });
 
-const getColumnData = <T>(arr: T[], rowSize: number, column: number) => {
-  if (rowSize < 0 || column < 0) {
-    return [];
-  }
-  let columnData = [];
-  let pos = column;
-  while (pos < arr.length) {
-    columnData.push(arr[pos])
-    pos = pos + rowSize;
-  }
-  return columnData;
-}
-
-describe('getColumnData', () => {
+describe('getColumn', () => {
   test('returns empty array for various combinations', () => {
-    expect(getColumnData([], 0, 0)).toEqual([]);
-    expect(getColumnData([], 1, 1)).toEqual([]);
-    expect(getColumnData([], 1, 1)).toEqual([]);
-    expect(getColumnData([], -1, 0)).toEqual([]);
-    expect(getColumnData([], 0, -1)).toEqual([]);
+    expect(getColumn({data:[], columns:0}, 0)).toEqual([]);
+    expect(getColumn({data:[], columns:0}, 1)).toEqual([]);
+    expect(getColumn({data:[], columns:0}, 1)).toEqual([]);
+    expect(getColumn({data:[], columns:0}, 0)).toEqual([]);
+    expect(getColumn({data:[], columns:0}, -1)).toEqual([]);
   });
 
   test('returns expected column data', () => {
-    const matrix = [0, 1, 2, 3,
+    const matrix = {data: [0, 1, 2, 3,
                     10, 11, 12, 13,
-                    20, 21, 22, 23];
+                    20, 21, 22, 23],
+      columns: 4};
 
-    expect(getColumnData(matrix, 4, 0)).toEqual([0,10, 20]);
-    expect(getColumnData(matrix, 4, 1)).toEqual([1, 11, 21]);
-    expect(getColumnData(matrix, 4, 3)).toEqual([3, 13, 23]);
+    expect(getColumn(matrix, 0)).toEqual([0,10, 20]);
+    expect(getColumn(matrix, 1)).toEqual([1, 11, 21]);
+    expect(getColumn(matrix, 3)).toEqual([3, 13, 23]);
   })
 });
 
 
-const getRowData = <T>(arr: T[], rowSize: number, row: number) =>
-  arr.slice(row*rowSize, (row+1)*rowSize)
+const getRow = <T>(m: Matrix<T>, row: number) =>
+  m.data.slice(row*m.columns, (row+1)*m.columns)
 
 
-describe('getColumnData', () => {
+describe('getRow', () => {
   test('returns empty array for various combinations', () => {
-    expect(getRowData([], 0, 0)).toEqual([]);
-    expect(getRowData([], 1, 0)).toEqual([]);
-    expect(getRowData([], 0, 1)).toEqual([]);
+    expect(getRow({data:[], columns: 0}, 0)).toEqual([]);
+    expect(getRow({data: [], columns: 1}, 0)).toEqual([]);
+    expect(getRow({data: [], columns: 0}, 1)).toEqual([]);
   });
 
   test('returns expected row data', () => {
-    const matrix = [0, 1, 2, 3,
+    const matrix = {data: [0, 1, 2, 3,
                     10, 11, 12, 13,
-                    20, 21, 22, 23];
-    expect(getRowData(matrix, 4, 0)).toEqual([0,1,2,3]);
-    expect(getRowData(matrix, 4, 1)).toEqual([10, 11,12,13]);
-    expect(getRowData(matrix, 4, 2)).toEqual([20, 21, 22, 23]);
+                    20, 21, 22, 23],
+      columns: 4};
+    expect(getRow(matrix, 0)).toEqual([0,1,2,3]);
+    expect(getRow(matrix, 1)).toEqual([10, 11,12,13]);
+    expect(getRow(matrix, 2)).toEqual([20, 21, 22, 23]);
   })
 })
 
-const isValidRow = (sudokuPuzzle: Puzzle, rowSize: number, row: number): boolean => 
-  areAllSomesUnique(getRowData(sudokuPuzzle, rowSize, row));
+const isValidRow = (m: Matrix<Option<number>>, row: number): boolean => 
+  areAllSomesUnique(getRow(m, row));
 
-const isValidColumn = (sudokuPuzzle: Puzzle, rowSize: number, column: number): boolean => 
-  areAllSomesUnique(getColumnData(sudokuPuzzle, rowSize, column));
+const isValidColumn = (m: Matrix<Option<number>>, column: number): boolean => 
+  areAllSomesUnique(getColumn(m, column));
 
 
-const isValid = (puzzle: Puzzle, rows: number, columns: number): boolean => {
+const isValid = (m: Matrix<Option<number>>): boolean => {
+  const rows = m.data.length / m.columns;
   const rowsValid = (new Array(rows).fill(0))
     .reduce(
-      (acc, next, i)=> acc && isValidRow(puzzle, rows, i), 
+      (acc, next, i)=> acc && isValidRow(m, i), 
       true);
-  const columnsValid = (new Array(columns).fill(0))
+  const columnsValid = (new Array(m.columns).fill(0))
     .reduce(
-      (acc, next, i)=> acc && isValidColumn(puzzle, rows, i), 
+      (acc, next, i)=> acc && isValidColumn(m, i), 
       true);
   return rowsValid && columnsValid;
 }
@@ -111,14 +119,15 @@ const isValid = (puzzle: Puzzle, rows: number, columns: number): boolean => {
 
 describe('Work on a square', () => {
   test('a simple square test', () => {
-    const matrix = [1, 2, 3,
+    const matrix: number[] = [1, 2, 3,
                     2, 3, 1,
                     3, 1, 2];
     const liftedmatrix = matrix.map(x => option(x));
+    const m: Matrix<Option<number>> = {data: liftedmatrix, columns: 3}
 
     for (let x=0;x<2;x++) {
-      expect(isValidRow(liftedmatrix, 3, x)).toEqual(true);
-      expect(isValidColumn(liftedmatrix, 3, x)).toEqual(true);
+      expect(isValidRow(m, x)).toEqual(true);
+      expect(isValidColumn(m, x)).toEqual(true);
     }
   });
 
@@ -132,7 +141,7 @@ describe('Work on a square', () => {
         3, 1, 2];
 
     const liftedmatrix = matrix.map(x => option(x));
-    expect(isValid(liftedmatrix,3,3)).toEqual(true);
+    expect(isValid({data: liftedmatrix, columns: 3})).toEqual(true);
   })
 
 })
