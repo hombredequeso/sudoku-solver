@@ -24,6 +24,23 @@ const getColumn= <T>(m: Matrix<T>, column: number) => {
   return columnData;
 }
 
+const rowCount= <T>(m: Matrix<T>) => {
+  if (m.columns < 1) return 0;
+  return Math.ceil((m.data.length||0) / m.columns);
+}
+
+describe('rowCount', () => {
+  test('returns the number of rows in the matrix', () => {
+    expect(rowCount({data:[], columns:1})).toEqual(0);
+    expect(rowCount({data:[], columns:0})).toEqual(0);
+    expect(rowCount({data:[1], columns:1})).toEqual(1);
+    expect(rowCount({data:[1, 2], columns:1})).toEqual(2);
+    expect(rowCount({data:[1, 2, 3, 4, 5, 6], columns:2})).toEqual(3);
+    expect(rowCount({data:[1, 2, 3, 4, 5, 6, 7], columns:2})).toEqual(4);
+  })
+
+})
+
 const merge = (puzzle: Puzzle, solutionTree: SolutionTree): Puzzle => 
   puzzle.map((p,i) => 
     i < solutionTree.length ?
@@ -104,7 +121,7 @@ const isValidColumn = (m: Matrix<Option<number>>, column: number): boolean =>
 
 
 const isValid = (m: Matrix<Option<number>>): boolean => {
-  const rows = m.data.length / m.columns;
+  const rows = rowCount(m);
   const rowsValid = (new Array(rows).fill(0))
     .reduce(
       (acc, next, i)=> acc && isValidRow(m, i), 
