@@ -89,14 +89,14 @@ describe('getColumnData', () => {
   })
 })
 
-const isValidRow = (sudokuPuzzle: Puzzle, rowSize: number, row: number): Boolean => 
+const isValidRow = (sudokuPuzzle: Puzzle, rowSize: number, row: number): boolean => 
   areAllSomesUnique(getRowData(sudokuPuzzle, rowSize, row));
 
-const isValidColumn = (sudokuPuzzle: Puzzle, rowSize: number, column: number): Boolean => 
+const isValidColumn = (sudokuPuzzle: Puzzle, rowSize: number, column: number): boolean => 
   areAllSomesUnique(getColumnData(sudokuPuzzle, rowSize, column));
 
 
-const isValid = (puzzle, rows, columns) => {
+const isValid = (puzzle: Puzzle, rows: number, columns: number): boolean => {
   const rowsValid = (new Array(rows).fill(0))
     .reduce(
       (acc, next, i)=> acc && isValidRow(puzzle, rows, i), 
@@ -149,7 +149,7 @@ const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
   return squareData;
 }
 
-const isValidSquare = (sudokuPuzzle: Puzzle, square: number): Boolean => {
+const isValidSquare = (sudokuPuzzle: Puzzle, square: number): boolean => {
   const squareData = getSquareData(sudokuPuzzle, square);
   return areAllSomesUnique(squareData);
 }
@@ -157,7 +157,7 @@ const isValidSquare = (sudokuPuzzle: Puzzle, square: number): Boolean => {
 const reducer = <T>(acc: T[], next: Option<T>) => 
   next.map<T[]>(n => [...acc, n]).getOrElse(()=>acc);
 
-const areAllSomesUnique = (a: Option<number>[]): Boolean => {
+const areAllSomesUnique = (a: Option<number>[]): boolean => {
   let start : number[] = [];
   const somes = a.reduce(reducer, start);
   return areAllElementsUnique(somes);
