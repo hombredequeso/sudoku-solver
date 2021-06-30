@@ -41,7 +41,7 @@ describe('rowCount', () => {
 
 })
 
-const merge = (puzzle: Puzzle, solutionTree: SolutionTree): Puzzle => 
+const merge = (puzzle: Place[], solutionTree: SolutionTree): Place[] => 
   puzzle.map((p,i) => 
     i < solutionTree.length ?
     option(solutionTree[i]) :
@@ -164,21 +164,40 @@ describe('Work on a square', () => {
 })
 
 const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
-  const startPos = (square%3)* 27 + (square%3 * 3);
+  const startPos = square * 9;
   const secondRowShift = 9;
   const thirdRowShift = 18;
 
   const squareData = 
-    sudokuPuzzle.slice(startPos, 3)
-    .concat(sudokuPuzzle.slice(startPos + secondRowShift, 3))
-    .concat(sudokuPuzzle.slice(startPos + thirdRowShift, 3));
+    sudokuPuzzle.slice(startPos, startPos + 3)
+    .concat(sudokuPuzzle.slice(startPos + secondRowShift, startPos + secondRowShift +3))
+    .concat(sudokuPuzzle.slice(startPos + thirdRowShift, startPos + thirdRowShift+ 3));
   return squareData;
 }
 
 const isValidSquare = (sudokuPuzzle: Puzzle, square: number): boolean => {
   const squareData = getSquareData(sudokuPuzzle, square);
+  console.log({squareData})
   return areAllSomesUnique(squareData);
 }
+
+
+describe('isValidSquare', () => {
+  test('is true if all numbers only appear once', () => {
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => option(x));
+    for(let i = 0; i < 9; i++) {
+      expect(isValidSquare(m, i)).toEqual(true);
+    }
+  })
+
+  test('is false if there are any duplicates', () => {
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => option(x));
+    m[1] = option(0);
+    m[9] = option(11 + 9);
+    expect(isValidSquare(m, 0)).toEqual(false);
+    expect(isValidSquare(m, 1)).toEqual(false);
+  })
+});
 
 const reducer = <T>(acc: T[], next: Option<T>) => 
   next.map<T[]>(n => [...acc, n]).getOrElse(()=>acc);
