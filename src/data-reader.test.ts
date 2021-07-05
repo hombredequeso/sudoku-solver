@@ -26,30 +26,30 @@ describe('read data into structure', () => {
       return (isNaN(n))? E.left(`Parse Error: ${s} is not an integer`): E.right(n);
     }
 
-    const [problem, solution] = sudokuSource.split(',');
-    const puzzle: Either<string,number>[] = problem.split('').map(c => parseE(c)); // .map(i => toPlace(i));
+    const [problemStr, solutionStr] = sudokuSource.split(',');
 
-    const expectedResult: Either<string, Option<number[]>> = pipe(
-      solution.split(''),
+    const parseInput = (s: string): Either<string, number[]> => pipe(
+      s.split(''),
       A.map(parseE),
-      A.sequence(E.Applicative),
-      E.map(O.some)
+      A.sequence(E.Applicative) // turn Either<E,T>[] => Either<E,T[]>
     );
 
-    const result: Either<string, Option<number>[]> = 
+    const puzzle: Either<string, Option<number>[]> = 
       pipe(
-        puzzle, 
-        A.sequence(E.Applicative), 
+        parseInput(problemStr),
         E.map(A.map(toPlace))
       );
 
-    console.log(result);
-
     const soln: Either<string, Option<SolutionTree>> =
       pipe(
-        result,
+        puzzle,
         E.map(solve)
       );
+
+    const expectedResult: Either<string, Option<number[]>> = pipe(
+      parseInput(solutionStr),
+      E.map(O.some)
+    );
 
     // expect(soln).toEqual(expectedResult);
   })
