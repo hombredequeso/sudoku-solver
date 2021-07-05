@@ -19,6 +19,10 @@ Currently, only tests for solving up to a 9x9 grid is implemented.
 yarn test
 ```
 
+## Source of Sudoku puzzles
+
+https://www.kaggle.com/rohanrao/sudoku
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
 

@@ -19,6 +19,7 @@
     "build": "tsc"
   },
   "dependencies": {
+    "fp-ts": "^2.10.5",
     "ts-option": "^2.1.0"
   }
 }

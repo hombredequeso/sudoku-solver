@@ -75,7 +75,7 @@ describe('traverse tree', () => {
     const isValidLocal = (n: number[]) => {return isValid({data: merge(puzzle, n), columns: 3})};
     const isSolutionLocal = (n: number[]) => isSolution(n, puzzle);
     let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
-    console.log({iterations, leafNodeCount, solution })
+    // console.log({iterations, leafNodeCount, solution })
     expect(solution).toEqual(option([1,2,3,2,3,1,3,1,2]));
   })
 })

@@ -177,7 +177,7 @@ const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
 
 const isValidSquare = (sudokuPuzzle: Puzzle, square: number): boolean => {
   const squareData = getSquareData(sudokuPuzzle, square);
-  console.log({squareData})
+  // console.log({squareData})
   return areAllSomesUnique(squareData);
 }
 
