@@ -200,8 +200,15 @@ describe('isValidSquare', () => {
     expect(isValidSquare(m, 1)).toEqual(false);
   })
 
-  test('is true if there is none\'s', () => {
+  test('is true if there are nones', () => {
     const m = new Array(81).fill(0).map(x => O.none);
+    for(let i = 0; i < 9; i++) {
+      expect(isValidSquare(m, i)).toEqual(true);
+    }
+  });
+
+  test('is true if there the array does not have elements', () => {
+    const m = new Array(0);
     for(let i = 0; i < 9; i++) {
       expect(isValidSquare(m, i)).toEqual(true);
     }
