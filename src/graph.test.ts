@@ -3,11 +3,12 @@ import { Arbitrary } from 'fast-check';
 import * as O from 'fp-ts/Option';
 import {Option} from 'fp-ts/Option';
 
-import {isValid, merge} from './sudoku.test';
+import {isValidPuzzle, isValid, merge} from './sudoku.test';
 
 type Node = number[];
 type Place = Option<number>;
 type Puzzle = Place[];
+type SolutionTree = number[];
 
 let leafNodeCount = 0;
 function* getChildren(min: number, max: number, puzzle: Puzzle, n: Node): Generator<Node, any, boolean> {
@@ -45,25 +46,26 @@ function findSolution(
   isSolutionLocal: (n: Node) => boolean)
   : Option<Node> {
 
-  ++iterations;
-  if (!isValidLocal(n)) {
+    ++iterations;
+    // console.log({iterations});
+    if (!isValidLocal(n)) {
+      return O.none;
+    }
+    if (isSolutionLocal(n)) {
+      return O.some(n);
+    }
+    const gen = getChildrenLocal(n);
+    let next = gen.next();
+    while (!next.done) {
+      let child = next.value;
+      let solution = findSolution(child, getChildrenLocal, isValidLocal, isSolutionLocal);
+      if (O.isSome(solution)) {
+        return solution;
+      }
+      next = gen.next();
+    }
     return O.none;
   }
-  if (isSolutionLocal(n)) {
-    return O.some(n);
-  }
-  const gen = getChildrenLocal(n);
-  let next = gen.next();
-  while (!next.done) {
-    let child = next.value;
-    let solution = findSolution(child, getChildrenLocal, isValidLocal, isSolutionLocal);
-    if (O.isSome(solution)) {
-      return solution;
-    }
-    next = gen.next();
-  }
-  return O.none;
-}
 
 describe('traverse tree', () => {
   test('fine solution does not find a solution',  () => {
@@ -79,3 +81,17 @@ describe('traverse tree', () => {
     expect(solution).toEqual(O.some([1,2,3,2,3,1,3,1,2]));
   })
 })
+
+
+const solve = (puzzle: Puzzle): Option<SolutionTree> => {
+  iterations = 0;
+  leafNodeCount = 0;
+  let root: Node = [];
+  const getChildrenLocal = (n: Node): Generator<Node, any, boolean> => getChildren(1, 9, puzzle, n);
+  const isValidLocal = (n: number[]) => {return isValidPuzzle(merge(puzzle, n))};
+  const isSolutionLocal = (n: number[]) => isSolution(n, puzzle);
+  let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
+  return solution;
+}
+
+export {solve};

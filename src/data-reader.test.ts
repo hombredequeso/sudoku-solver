@@ -8,13 +8,12 @@ import * as A from 'fp-ts/Array'
 
 import { pipe } from 'fp-ts/function'
 
+import {solve} from './graph.test';
+
 type Place = Option<number>;
 type Puzzle = Place[];
 type SolutionTree = number[];
 
-const solve = (puzzle: Puzzle): Option<SolutionTree> => {
-  return O.none;
-}
 
 describe('read data into structure', () => {
   test('works', () => {
@@ -51,7 +50,6 @@ describe('read data into structure', () => {
       E.map(O.some)
     );
 
-    // TODO: get solve function to work now!
     // expect(soln).toEqual(expectedResult);
   })
 })

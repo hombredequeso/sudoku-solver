@@ -215,6 +215,73 @@ describe('isValidSquare', () => {
   });
 });
 
+
+
+const areValidSquares = (puzzle: Puzzle, squares: number[]): boolean => {
+  return squares.every(s => isValidSquare(puzzle, s));
+}
+
+
+describe('areValidSquares', () => {
+  test('is true if all numbers only appear once', () => {
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
+    const squares = new Array(9).fill(0).map((x,i) => i);
+    expect(areValidSquares(m, squares)).toEqual(true);
+  })
+
+  test('is false if there are any duplicates', () => {
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
+    m[1] = O.some(0);
+    m[9] = O.some(11 + 9);
+    const squares = new Array(9).fill(0).map((x,i) => i);
+    expect(areValidSquares(m, squares)).toEqual(false);
+  })
+
+  test('is true if there are nones', () => {
+    const m = new Array(81).fill(0).map(x => O.none);
+    const squares = new Array(9).fill(0).map((x,i) => i);
+    expect(areValidSquares(m, squares)).toEqual(true);
+  });
+
+  test('is true if there the array does not have elements', () => {
+    const m = new Array(0);
+    const squares = new Array(9).fill(0).map((x,i) => i);
+    expect(areValidSquares(m, squares)).toEqual(true);
+  });
+});
+
+const allSquares = new Array(9).fill(0).map((x,i) => i);
+
+const isValidPuzzle = (puzzle: Puzzle): boolean => {
+  const matrix = {data: puzzle, columns:9};
+  return isValid(matrix) && areValidSquares(puzzle, allSquares);
+};
+
+
+describe('isValidPuzzle', () => {
+  test('is true if all numbers only appear once', () => {
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
+    expect(isValidPuzzle(m)).toEqual(true);
+  })
+
+  test('is false if there are any duplicates', () => {
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
+    m[1] = O.some(0);
+    m[9] = O.some(11 + 9);
+    expect(isValidPuzzle(m)).toEqual(false);
+  })
+
+  test('is true if there are nones', () => {
+    const m = new Array(81).fill(0).map(x => O.none);
+    expect(isValidPuzzle(m)).toEqual(true);
+  });
+
+  test('is true if there the array does not have elements', () => {
+    const m = new Array(0);
+    expect(isValidPuzzle(m)).toEqual(true);
+  });
+});
+
 const reducer = <T>(acc: T[], next: Option<T>) => 
   pipe(
     next,
@@ -259,4 +326,5 @@ describe('areAllElementsUnique', () => {
 })
 
 
-export {isValid, merge};
+export {isValid, merge, isValidPuzzle};
+
