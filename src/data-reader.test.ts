@@ -51,6 +51,7 @@ describe('read data into structure', () => {
       E.map(O.some)
     );
 
+    // TODO: get solve function to work now!
     // expect(soln).toEqual(expectedResult);
   })
 })

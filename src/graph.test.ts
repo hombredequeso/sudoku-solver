@@ -1,6 +1,7 @@
 import * as fc from 'fast-check';
 import { Arbitrary } from 'fast-check';
-import {Option, option, none} from 'ts-option';
+import * as O from 'fp-ts/Option';
+import {Option} from 'fp-ts/Option';
 
 import {isValid, merge} from './sudoku.test';
 
@@ -10,7 +11,6 @@ type Puzzle = Place[];
 
 let leafNodeCount = 0;
 function* getChildren(min: number, max: number, puzzle: Puzzle, n: Node): Generator<Node, any, boolean> {
-  // console.log({n});
   if (n.length >= puzzle.length) {
     ++leafNodeCount;
     return;
@@ -47,22 +47,22 @@ function findSolution(
 
   ++iterations;
   if (!isValidLocal(n)) {
-    return none;
+    return O.none;
   }
   if (isSolutionLocal(n)) {
-    return option(n);
+    return O.some(n);
   }
   const gen = getChildrenLocal(n);
   let next = gen.next();
   while (!next.done) {
     let child = next.value;
     let solution = findSolution(child, getChildrenLocal, isValidLocal, isSolutionLocal);
-    if (solution.isDefined) {
+    if (O.isSome(solution)) {
       return solution;
     }
     next = gen.next();
   }
-  return none;
+  return O.none;
 }
 
 describe('traverse tree', () => {
@@ -70,12 +70,12 @@ describe('traverse tree', () => {
     iterations = 0;
     leafNodeCount = 0;
     let root: Node = [];
-    const puzzle = new Array(9).fill(none);
+    const puzzle = new Array(9).fill(O.none);
     const getChildrenLocal = (n: Node): Generator<Node, any, boolean> => getChildren(1, 3, puzzle, n);
     const isValidLocal = (n: number[]) => {return isValid({data: merge(puzzle, n), columns: 3})};
     const isSolutionLocal = (n: number[]) => isSolution(n, puzzle);
     let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
     // console.log({iterations, leafNodeCount, solution })
-    expect(solution).toEqual(option([1,2,3,2,3,1,3,1,2]));
+    expect(solution).toEqual(O.some([1,2,3,2,3,1,3,1,2]));
   })
 })

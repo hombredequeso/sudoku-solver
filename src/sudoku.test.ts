@@ -1,6 +1,9 @@
 import * as fc from 'fast-check';
 import { Arbitrary } from 'fast-check';
-import {Option, option, none} from 'ts-option';
+import * as O from 'fp-ts/Option';
+import {Option} from 'fp-ts/Option';
+
+import { pipe } from 'fp-ts/function'
 
 type Place = Option<number>;
 type Puzzle = Place[];
@@ -44,12 +47,12 @@ describe('rowCount', () => {
 const merge = (puzzle: Place[], solutionTree: SolutionTree): Place[] => 
   puzzle.map((p,i) => 
     i < solutionTree.length ?
-    option(solutionTree[i]) :
+    O.some(solutionTree[i]) :
     p
   );
 
-const intOption: Arbitrary<Option<number>> = fc.integer().map(i => option(i));
-const intOption2: Arbitrary<Option<number>> = fc.boolean().chain(b => b ? intOption : fc.constant(none));
+const intOption: Arbitrary<Option<number>> = fc.integer().map(i => O.some(i));
+const intOption2: Arbitrary<Option<number>> = fc.boolean().chain(b => b ? intOption : fc.constant(O.none));
 
 describe('merge', () => {
   test('merges puzzle and solutionTree', () => {
@@ -63,7 +66,7 @@ describe('merge', () => {
     fc.assert(fc.property(fc.array(intOption2), fc.array(fc.nat()), (intOptions, ints) => {
       const result = merge(intOptions, ints);
       const resultUpToSolnTree = result.slice(0, ints.length);
-      const allAreSome = resultUpToSolnTree.every(x => x.isDefined);
+      const allAreSome = resultUpToSolnTree.every(x => O.isSome(x));
       expect(allAreSome).toEqual(true);
     }));
   });
@@ -139,7 +142,7 @@ describe('Work on a square', () => {
     const matrix: number[] = [1, 2, 3,
                     2, 3, 1,
                     3, 1, 2];
-    const liftedmatrix = matrix.map(x => option(x));
+    const liftedmatrix = matrix.map(x => O.some(x));
     const m: Matrix<Option<number>> = {data: liftedmatrix, columns: 3}
 
     for (let x=0;x<2;x++) {
@@ -157,7 +160,7 @@ describe('Work on a square', () => {
         2, 3, 1,
         3, 1, 2];
 
-    const liftedmatrix = matrix.map(x => option(x));
+    const liftedmatrix = matrix.map(x => O.some(x));
     expect(isValid({data: liftedmatrix, columns: 3})).toEqual(true);
   })
 
@@ -177,30 +180,40 @@ const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
 
 const isValidSquare = (sudokuPuzzle: Puzzle, square: number): boolean => {
   const squareData = getSquareData(sudokuPuzzle, square);
-  // console.log({squareData})
   return areAllSomesUnique(squareData);
 }
 
 
 describe('isValidSquare', () => {
   test('is true if all numbers only appear once', () => {
-    const m = new Array(81).fill(0).map((x,i) => i).map(x => option(x));
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
     for(let i = 0; i < 9; i++) {
       expect(isValidSquare(m, i)).toEqual(true);
     }
   })
 
   test('is false if there are any duplicates', () => {
-    const m = new Array(81).fill(0).map((x,i) => i).map(x => option(x));
-    m[1] = option(0);
-    m[9] = option(11 + 9);
+    const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
+    m[1] = O.some(0);
+    m[9] = O.some(11 + 9);
     expect(isValidSquare(m, 0)).toEqual(false);
     expect(isValidSquare(m, 1)).toEqual(false);
   })
+
+  test('is true if there is none\'s', () => {
+    const m = new Array(81).fill(0).map(x => O.none);
+    for(let i = 0; i < 9; i++) {
+      expect(isValidSquare(m, i)).toEqual(true);
+    }
+  });
 });
 
 const reducer = <T>(acc: T[], next: Option<T>) => 
-  next.map<T[]>(n => [...acc, n]).getOrElse(()=>acc);
+  pipe(
+    next,
+    O.map(n => [...acc, n]),
+    O.getOrElse(()=>acc)
+  );
 
 const areAllSomesUnique = (a: Option<number>[]): boolean => {
   let start : number[] = [];
