@@ -51,19 +51,19 @@ const merge = (puzzle: Place[], solutionTree: SolutionTree): Place[] =>
     p
   );
 
-const intOption: Arbitrary<Option<number>> = fc.integer().map(i => O.some(i));
-const intOption2: Arbitrary<Option<number>> = fc.boolean().chain(b => b ? intOption : fc.constant(O.none));
+const someOption: Arbitrary<Option<number>> = fc.integer().map(i => O.some(i));
+const intOption: Arbitrary<Option<number>> = fc.boolean().chain(b => b ? someOption : fc.constant(O.none));
 
 describe('merge', () => {
   test('merges puzzle and solutionTree', () => {
-    fc.assert(fc.property(fc.array(intOption2), fc.array(fc.nat()), (intOptions, ints) => {
+    fc.assert(fc.property(fc.array(intOption), fc.array(fc.nat()), (intOptions, ints) => {
       const result = merge(intOptions, ints);
       expect(result.length).toEqual(intOptions.length);
     }));
   });
 
   test('All elements up to length of solutionTree should be Some', () => {
-    fc.assert(fc.property(fc.array(intOption2), fc.array(fc.nat()), (intOptions, ints) => {
+    fc.assert(fc.property(fc.array(intOption), fc.array(fc.nat()), (intOptions, ints) => {
       const result = merge(intOptions, ints);
       const resultUpToSolnTree = result.slice(0, ints.length);
       const allAreSome = resultUpToSolnTree.every(x => O.isSome(x));
