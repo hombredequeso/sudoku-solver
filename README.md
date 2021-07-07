@@ -6,7 +6,6 @@ sudoku-solver is a Typescript project for solving sudoku puzzles by brute force.
 
 Use the [yarn](https://yarnpkg.com/) package manager.
 
-
 ```bash
 yarn
 ```
