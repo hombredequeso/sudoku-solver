@@ -50,7 +50,7 @@ describe('read data into structure', () => {
       E.map(O.some)
     );
 
-    // expect(soln).toEqual(expectedResult);
+    expect(soln).toEqual(expectedResult);
   })
 })
 

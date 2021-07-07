@@ -167,7 +167,7 @@ describe('Work on a square', () => {
 })
 
 const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
-  const startPos = square * 9;
+  const startPos = (Math.floor(square/3)*27) + (square%3 * 3);
   const secondRowShift = 9;
   const thirdRowShift = 18;
 
@@ -192,12 +192,37 @@ describe('isValidSquare', () => {
     }
   })
 
+
+  test('is valid square special', () => {
+    const p = [1,2,3,4,5,6,7,8,9, 4,5,6, 7].map(x => O.some(x));
+    expect(isValidSquare(p, 0)).toEqual(true);
+    expect(isValidSquare(p, 1)).toEqual(true);
+    expect(isValidSquare(p, 2)).toEqual(true);
+  })
+
+
   test('is false if there are any duplicates', () => {
     const m = new Array(81).fill(0).map((x,i) => i).map(x => O.some(x));
-    m[1] = O.some(0);
-    m[9] = O.some(11 + 9);
-    expect(isValidSquare(m, 0)).toEqual(false);
-    expect(isValidSquare(m, 1)).toEqual(false);
+    m[0] = O.some(100);
+    m[9] = O.some(100);
+
+    m[5] = O.some(200);
+    m[14] = O.some(200);
+
+    m[7] = O.some(300);
+    m[16] = O.some(300);
+
+    m[27] = O.some(400);
+    m[28] = O.some(400);
+
+    m[30] = O.some(500);
+    m[39] = O.some(500);
+
+    expect(isValidSquare(m, 0)).toEqual(false); 
+     expect(isValidSquare(m, 1)).toEqual(false);
+     expect(isValidSquare(m, 2)).toEqual(false);
+     expect(isValidSquare(m, 3)).toEqual(false);
+     expect(isValidSquare(m, 4)).toEqual(false);
   })
 
   test('is true if there are nones', () => {

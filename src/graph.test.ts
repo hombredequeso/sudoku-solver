@@ -16,12 +16,46 @@ function* getChildren(min: number, max: number, puzzle: Puzzle, n: Node): Genera
     ++leafNodeCount;
     return;
   }
-  for(let i=min; i<=max; i++) {
-    n.push(i);
+  const currentNodeLen = n.length;
+  if (O.isSome(puzzle[currentNodeLen])) {
+    const puzzleValue = O.getOrElse(() => -1)(puzzle[currentNodeLen]);
+    n.push(puzzleValue);
     yield n;
     n.pop();
+  } else {
+    for(let i=min; i<=max; i++) {
+      n.push(i);
+      yield n;
+      n.pop();
+    }
   }
 }
+
+
+describe('getChildren', () => {
+  test('Returns min to max children',  () => {
+    const puzzle = new Array(9).fill(O.none);
+    let root: Node = [];
+    const min = 1;
+    const max = 3;
+    const gen = getChildren(min, max, puzzle, root);
+    expect(gen.next().value).toEqual([1]);
+    expect(gen.next().value).toEqual([2]);
+    expect(gen.next().value).toEqual([3]);
+    expect(gen.next().done).toEqual(true);
+  })
+
+  test('Returns one child if one specified in puzzle', () => {
+    const puzzle = new Array(9).fill(O.none);
+    puzzle[0] = O.some(50);
+    let root: Node = [];
+    const min = 1;
+    const max = 3;
+    const gen = getChildren(min, max, puzzle, root);
+    expect(gen.next().value).toEqual([50]);
+    expect(gen.next().done).toEqual(true);
+  })
+})
 
 // function traverse(n: Node) {
 //   const gen = getChildren(n);
@@ -93,5 +127,22 @@ const solve = (puzzle: Puzzle): Option<SolutionTree> => {
   let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
   return solution;
 }
+
+
+describe('solve one square', () => {
+  test('finds a solution to a 9',  () => {
+    let root: Node = [];
+    const puzzle: Puzzle = new Array(9).fill(O.none);
+    const solution = solve(puzzle);
+    expect(solution).toEqual(O.some([1,2,3,4,5,6,7,8,9]));
+  })
+
+  test('finds a solution to a 18',  () => {
+    let root: Node = [];
+    const puzzle: Puzzle = new Array(18).fill(O.none);
+    const solution = solve(puzzle);
+    expect(solution).toEqual(O.some([1,2,3,4,5,6,7,8,9, 4,5,6,7,8,9,1,2,3]));
+  })
+})
 
 export {solve};
