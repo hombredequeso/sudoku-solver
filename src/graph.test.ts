@@ -6,13 +6,11 @@ import {Option} from 'fp-ts/Option';
 import {isValidPuzzle, isValid, merge, Place, Puzzle, SolutionTree} from './sudoku';
 import {getChildren, isSolution, findSolution, solve} from './graph'
 
-type Node = number[];
-
 
 describe('getChildren', () => {
   test('Returns min to max children',  () => {
     const puzzle = new Array(9).fill(O.none);
-    let root: Node = [];
+    let root: SolutionTree = [];
     const min = 1;
     const max = 3;
     const gen = getChildren(min, max, puzzle, root);
@@ -25,7 +23,7 @@ describe('getChildren', () => {
   test('Returns one child if one specified in puzzle', () => {
     const puzzle = new Array(9).fill(O.none);
     puzzle[0] = O.some(50);
-    let root: Node = [];
+    let root: SolutionTree = [];
     const min = 1;
     const max = 3;
     const gen = getChildren(min, max, puzzle, root);
@@ -37,9 +35,9 @@ describe('getChildren', () => {
 
 describe('traverse tree', () => {
   test('fine solution does not find a solution',  () => {
-    let root: Node = [];
+    let root: SolutionTree = [];
     const puzzle = new Array(9).fill(O.none);
-    const getChildrenLocal = (n: Node): Generator<Node, any, boolean> => getChildren(1, 3, puzzle, n);
+    const getChildrenLocal = (n: SolutionTree): Generator<SolutionTree, any, boolean> => getChildren(1, 3, puzzle, n);
     const isValidLocal = (n: number[]) => {return isValid({data: merge(puzzle, n), columns: 3})};
     const isSolutionLocal = (n: number[]) => isSolution(n, puzzle);
     let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
@@ -50,14 +48,14 @@ describe('traverse tree', () => {
 
 describe('solve one square', () => {
   test('finds a solution to a 9',  () => {
-    let root: Node = [];
+    let root: SolutionTree = [];
     const puzzle: Puzzle = new Array(9).fill(O.none);
     const solution = solve(puzzle);
     expect(solution).toEqual(O.some([1,2,3,4,5,6,7,8,9]));
   })
 
   test('finds a solution to a 18',  () => {
-    let root: Node = [];
+    let root: SolutionTree = [];
     const puzzle: Puzzle = new Array(18).fill(O.none);
     const solution = solve(puzzle);
     expect(solution).toEqual(O.some([1,2,3,4,5,6,7,8,9, 4,5,6,7,8,9,1,2,3]));

@@ -3,13 +3,9 @@ import {Option} from 'fp-ts/Option';
 
 import {isValidPuzzle, isValid, merge, Place, Puzzle, SolutionTree} from './sudoku';
 
-type Node = number[];
 
-let leafNodeCount = 0;
-
-export function* getChildren(min: number, max: number, puzzle: Puzzle, n: Node): Generator<Node, any, boolean> {
+export function* getChildren(min: number, max: number, puzzle: Puzzle, n: SolutionTree): Generator<SolutionTree, any, boolean> {
   if (n.length >= puzzle.length) {
-    ++leafNodeCount;
     return;
   }
   const currentNodeLen = n.length;
@@ -28,21 +24,18 @@ export function* getChildren(min: number, max: number, puzzle: Puzzle, n: Node):
 }
 
 
-export function isSolution(n: Node, p: Puzzle): boolean {
+export function isSolution(n: SolutionTree, p: Puzzle): boolean {
   return (n.length === p.length);
 }
 
 
-let iterations = 0;
-
 export function findSolution(
-  n: Node, 
-  getChildrenLocal: (n: Node)=> Generator<Node, any, boolean>, 
-  isValidLocal: (n: Node) => boolean, 
-  isSolutionLocal: (n: Node) => boolean)
-  : Option<Node> {
+  n: SolutionTree, 
+  getChildrenLocal: (n: SolutionTree)=> Generator<SolutionTree, any, boolean>, 
+  isValidLocal: (n: SolutionTree) => boolean, 
+  isSolutionLocal: (n: SolutionTree) => boolean)
+  : Option<SolutionTree> {
 
-    ++iterations;
     if (!isValidLocal(n)) {
       return O.none;
     }
@@ -64,10 +57,8 @@ export function findSolution(
 
 
 export const solve = (puzzle: Puzzle): Option<SolutionTree> => {
-  iterations = 0;
-  leafNodeCount = 0;
-  let root: Node = [];
-  const getChildrenLocal = (n: Node): Generator<Node, any, boolean> => getChildren(1, 9, puzzle, n);
+  let root: SolutionTree = [];
+  const getChildrenLocal = (n: SolutionTree): Generator<SolutionTree, any, boolean> => getChildren(1, 9, puzzle, n);
   const isValidLocal = (n: number[]) => {return isValidPuzzle(merge(puzzle, n))};
   const isSolutionLocal = (n: number[]) => isSolution(n, puzzle);
   let solution = findSolution(root, getChildrenLocal, isValidLocal, isSolutionLocal);
