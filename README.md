@@ -12,7 +12,12 @@ yarn
 
 ## Usage
 
-Currently, only tests for solving up to a 9x9 grid is implemented.
+```bash
+yarn tsc
+node dist/index.js 070000043040009610800634900094052000358460020000800530080070091902100005007040802
+```
+
+To test:
 
 ```bash
 yarn test
