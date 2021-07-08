@@ -1,18 +1,13 @@
-
 import * as O from 'fp-ts/Option';
 import {Option} from 'fp-ts/Option';
 import * as E from 'fp-ts/Either';
 import {Either} from 'fp-ts/Either';
-
 import * as A from 'fp-ts/Array'
-
 import { pipe } from 'fp-ts/function'
 
-import {solve} from './graph.test';
+import {solve} from './graph';
+import {Place, Puzzle, SolutionTree} from './sudoku'
 
-type Place = Option<number>;
-type Puzzle = Place[];
-type SolutionTree = number[];
 type Error = string;
 
 

@@ -1,36 +1,12 @@
 import * as fc from 'fast-check';
 import { Arbitrary } from 'fast-check';
+
 import * as O from 'fp-ts/Option';
 import {Option} from 'fp-ts/Option';
-
 import { pipe } from 'fp-ts/function'
 
-type Place = Option<number>;
-type Puzzle = Place[];
-type SolutionTree = number[];
+import {Place, Puzzle, SolutionTree, rowCount, merge, getColumn, getRow, Matrix, isValidColumn, isValidSquare, isValidRow, isValid, areValidSquares, isValidPuzzle, areAllElementsUnique } from './sudoku';
 
-interface Matrix<T> {
-  data: T[]; 
-  columns: number
-}
-
-const getColumn= <T>(m: Matrix<T>, column: number) => {
-  if (m.columns < 0 || column < 0) {
-    return [];
-  }
-  let columnData = [];
-  let pos = column;
-  while (pos < m.data.length) {
-    columnData.push(m.data[pos])
-    pos = pos + m.columns;
-  }
-  return columnData;
-}
-
-const rowCount= <T>(m: Matrix<T>) => {
-  if (m.columns < 1) return 0;
-  return Math.ceil((m.data.length||0) / m.columns);
-}
 
 describe('rowCount', () => {
   test('returns the number of rows in the matrix', () => {
@@ -44,12 +20,6 @@ describe('rowCount', () => {
 
 })
 
-const merge = (puzzle: Place[], solutionTree: SolutionTree): Place[] => 
-  puzzle.map((p,i) => 
-    i < solutionTree.length ?
-    O.some(solutionTree[i]) :
-    p
-  );
 
 const someOption: Arbitrary<Option<number>> = fc.integer().map(i => O.some(i));
 const intOption: Arbitrary<Option<number>> = fc.boolean().chain(b => b ? someOption : fc.constant(O.none));
@@ -94,8 +64,6 @@ describe('getColumn', () => {
 });
 
 
-const getRow = <T>(m: Matrix<T>, row: number) =>
-  m.data.slice(row*m.columns, (row+1)*m.columns)
 
 
 describe('getRow', () => {
@@ -115,26 +83,6 @@ describe('getRow', () => {
     expect(getRow(matrix, 2)).toEqual([20, 21, 22, 23]);
   })
 })
-
-const isValidRow = (m: Matrix<Option<number>>, row: number): boolean => 
-  areAllSomesUnique(getRow(m, row));
-
-const isValidColumn = (m: Matrix<Option<number>>, column: number): boolean => 
-  areAllSomesUnique(getColumn(m, column));
-
-
-const isValid = (m: Matrix<Option<number>>): boolean => {
-  const rows = rowCount(m);
-  const rowsValid = (new Array(rows).fill(0))
-    .reduce(
-      (acc, next, i)=> acc && isValidRow(m, i), 
-      true);
-  const columnsValid = (new Array(m.columns).fill(0))
-    .reduce(
-      (acc, next, i)=> acc && isValidColumn(m, i), 
-      true);
-  return rowsValid && columnsValid;
-}
 
 
 describe('Work on a square', () => {
@@ -166,22 +114,6 @@ describe('Work on a square', () => {
 
 })
 
-const getSquareData = (sudokuPuzzle: Puzzle, square: number): Puzzle => {
-  const startPos = (Math.floor(square/3)*27) + (square%3 * 3);
-  const secondRowShift = 9;
-  const thirdRowShift = 18;
-
-  const squareData = 
-    sudokuPuzzle.slice(startPos, startPos + 3)
-    .concat(sudokuPuzzle.slice(startPos + secondRowShift, startPos + secondRowShift +3))
-    .concat(sudokuPuzzle.slice(startPos + thirdRowShift, startPos + thirdRowShift+ 3));
-  return squareData;
-}
-
-const isValidSquare = (sudokuPuzzle: Puzzle, square: number): boolean => {
-  const squareData = getSquareData(sudokuPuzzle, square);
-  return areAllSomesUnique(squareData);
-}
 
 
 describe('isValidSquare', () => {
@@ -242,10 +174,6 @@ describe('isValidSquare', () => {
 
 
 
-const areValidSquares = (puzzle: Puzzle, squares: number[]): boolean => {
-  return squares.every(s => isValidSquare(puzzle, s));
-}
-
 
 describe('areValidSquares', () => {
   test('is true if all numbers only appear once', () => {
@@ -275,12 +203,6 @@ describe('areValidSquares', () => {
   });
 });
 
-const allSquares = new Array(9).fill(0).map((x,i) => i);
-
-const isValidPuzzle = (puzzle: Puzzle): boolean => {
-  const matrix = {data: puzzle, columns:9};
-  return isValid(matrix) && areValidSquares(puzzle, allSquares);
-};
 
 
 describe('isValidPuzzle', () => {
@@ -307,18 +229,6 @@ describe('isValidPuzzle', () => {
   });
 });
 
-const reducer = <T>(acc: T[], next: Option<T>) => 
-  pipe(
-    next,
-    O.map(n => [...acc, n]),
-    O.getOrElse(()=>acc)
-  );
-
-const areAllSomesUnique = (a: Option<number>[]): boolean => {
-  let start : number[] = [];
-  const somes = a.reduce(reducer, start);
-  return areAllElementsUnique(somes);
-};
 
 const arbArrayWithRepeats = <T>(arb: Arbitrary<T>): Arbitrary<T[]> => 
   fc.array(arb, {minLength: 1})
@@ -333,8 +243,6 @@ const arbArrayWithRepeats = <T>(arb: Arbitrary<T>): Arbitrary<T[]> =>
   .map(([seedArray, positions]) =>
     positions.map(i => seedArray[i]) );
 
-const areAllElementsUnique = (a: number[])=>
-  (new Set<number>(a).size) === a.length;
 
 describe('areAllElementsUnique', () => {
   test('returns true when there are no duplicates', () => {
@@ -351,5 +259,4 @@ describe('areAllElementsUnique', () => {
 })
 
 
-export {isValid, merge, isValidPuzzle};
 
