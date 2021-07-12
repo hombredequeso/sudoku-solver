@@ -16,7 +16,9 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "clean": "rm -rf node_modules && rm -rf dist",
+    "start": "yarn && yarn run build && node dist/index.js"
   },
   "dependencies": {
     "fp-ts": "^2.10.5"
