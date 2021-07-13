@@ -22,7 +22,7 @@ interface TestData {
 
 const makeTestData = (puzzle: Puzzle, solution: SolutionTree): TestData => ({puzzle, solution});
 
-describe('read data into structure', () => {
+describe('solve', () => {
 
   const toPlace = (i: number): Option<number> => (i === 0)? O.none: O.some(i);
   const parseE = (s: string): Either<Error, number> => {  
@@ -35,7 +35,38 @@ describe('read data into structure', () => {
     A.sequence(E.Applicative) // turn Either<E,T>[] => Either<E,T[]>
   );
 
-  test('bulk test', () => {
+  const timef = <T>(f: ()=> T): [T, bigint] => {
+    const startTime = process.hrtime.bigint();
+    const result = f();
+    const endTime = process.hrtime.bigint();
+    const executionTime = (endTime - startTime)/1000000n;
+    return [result, executionTime];
+  }
+
+
+  test('can solve a sudoku puzzle', () => {
+    const sudokuSource = "070000043040009610800634900094052000358460020000800530080070091902100005007040802,679518243543729618821634957794352186358461729216897534485276391962183475137945862";
+
+    const [problemStr, solutionStr] = sudokuSource.split(',');
+    const puzzle: Either<Error, Puzzle> = 
+      pipe(
+        parseInput(problemStr),
+        E.map(A.map(toPlace))
+      );
+    const soln: Either<Error, Option<SolutionTree>> =
+      pipe(
+        puzzle,
+        E.map(solve)
+      );
+    const expectedResult: Either<Error, Option<SolutionTree>> = 
+      pipe(
+        parseInput(solutionStr),
+        E.map(O.some)
+      );
+    expect(soln).toEqual(expectedResult);
+  })
+
+  test('can solve many sudoku puzzles', () => {
     const testFile = 'data/sudoku-100-puzzles.csv';
     const readStream = createReadStream(testFile);
 
@@ -58,26 +89,8 @@ describe('read data into structure', () => {
       return result;
     };
 
-    const timef = <T>(f: ()=>T) => {
-      const startTime = process.hrtime.bigint();
-      const result = f();
-      const endTime = process.hrtime.bigint();
-      const executionTime = (endTime - startTime)/1000000n;
-      return {result, executionTime};
-    }
-
-    const timedSolve = (puzzle: Puzzle) => {
-      const startTime = process.hrtime.bigint();
-      const result = solve(puzzle);
-      const endTime = process.hrtime.bigint();
-      const executionTime = (endTime - startTime)/1000000n;
-      console.log(`Execution time: ${executionTime}`)
-      return result;
-    }
-
     const runTest = (t: TestData) => {
-      // const solution: Option<SolutionTree> = timedSolve(t.puzzle);
-      const {result, executionTime} = timef(() => solve(t.puzzle))
+      const [result, executionTime] = timef(() => solve(t.puzzle))
       const expectedSolution: Option<SolutionTree> = O.some(t.solution);
       expect(result).toEqual(expectedSolution);
       return executionTime;
@@ -85,40 +98,14 @@ describe('read data into structure', () => {
 
     return neatCsv(readStream).then((dataIn: any[]) => {
       const testData: Either<Error, TestData>[] = dataIn.map(x => parse(x));
-
       const results: Either<Error, bigint>[] = testData.map(x => E.map(runTest)(x));
+
       const timings = results.map(e => E.getOrElse(() => 0n)(e));
       console.log({timings});
     });
 
   });
 
-  test('works', () => {
-    const sudokuSource = "070000043040009610800634900094052000358460020000800530080070091902100005007040802,679518243543729618821634957794352186358461729216897534485276391962183475137945862";
-
-
-    const [problemStr, solutionStr] = sudokuSource.split(',');
-
-
-    const puzzle: Either<Error, Puzzle> = 
-      pipe(
-        parseInput(problemStr),
-        E.map(A.map(toPlace))
-      );
-
-    const soln: Either<Error, Option<SolutionTree>> =
-      pipe(
-        puzzle,
-        E.map(solve)
-      );
-
-    const expectedResult: Either<Error, Option<SolutionTree>> = pipe(
-      parseInput(solutionStr),
-      E.map(O.some)
-    );
-
-    expect(soln).toEqual(expectedResult);
-  })
 })
 
 
