@@ -21,6 +21,7 @@
     "start": "yarn && yarn run build && node dist/index.js"
   },
   "dependencies": {
-    "fp-ts": "^2.10.5"
+    "fp-ts": "^2.10.5",
+    "neat-csv": "^6.0.1"
   }
 }

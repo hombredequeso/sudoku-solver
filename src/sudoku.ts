@@ -31,7 +31,7 @@ export const rowCount= <T>(m: Matrix<T>) => {
 }
 
 
-export const merge = (puzzle: Place[], solutionTree: SolutionTree): Place[] => 
+export const merge = (puzzle: Puzzle, solutionTree: SolutionTree): Puzzle => 
   puzzle.map((p,i) => 
     i < solutionTree.length ?
     O.some(solutionTree[i]) :
@@ -112,5 +112,3 @@ export const areAllSomesUnique = (a: Option<number>[]): boolean => {
 export const areAllElementsUnique = (a: number[])=>
   (new Set<number>(a).size) === a.length;
 
-
-// export {isValid, merge, isValidPuzzle};
