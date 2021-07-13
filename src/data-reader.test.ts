@@ -4,11 +4,11 @@ import * as E from 'fp-ts/Either';
 import {Either} from 'fp-ts/Either';
 import * as A from 'fp-ts/Array'
 import { pipe } from 'fp-ts/function'
+import {sequenceT} from 'fp-ts/Apply';
 
 import {solve} from './graph';
 import {Place, Puzzle, SolutionTree} from './sudoku'
 
-// const neatCsv = require('neat-csv');
 import neatCsv from 'neat-csv';
 import {createReadStream} from 'fs';
 
@@ -19,6 +19,8 @@ interface TestData {
   puzzle: Puzzle,
   solution: SolutionTree
 }
+
+const makeTestData = (puzzle: Puzzle, solution: SolutionTree): TestData => ({puzzle, solution});
 
 describe('read data into structure', () => {
 
@@ -38,18 +40,55 @@ describe('read data into structure', () => {
     const readStream = createReadStream(testFile);
 
     const parse = (x: any): Either<Error, TestData> => {
-      const puzzleStr = x.puzzle;
       const puzzle: Either<Error, Puzzle> = 
         pipe(
-          parseInput(problemStr),
+          parseInput(x.puzzle),
           E.map(A.map(toPlace))
         );
-      const solution: Either<Error,SolutionTree>  = parseInput(x.solution);
+      const solution: Either<Error,SolutionTree> = 
+        parseInput(x.solution);
 
+      // Don't panic, it's just your good ol' applicative
+      // https://rlee.dev/practical-guide-to-fp-ts-part-5
+      const result: Either<Error, TestData> = pipe(
+        sequenceT(E.either)(puzzle, solution),
+        E.map((args) => makeTestData(...args))
+      );
+
+      return result;
+    };
+
+    const timef = <T>(f: ()=>T) => {
+      const startTime = process.hrtime.bigint();
+      const result = f();
+      const endTime = process.hrtime.bigint();
+      const executionTime = (endTime - startTime)/1000000n;
+      return {result, executionTime};
     }
 
-    return neatCsv(readStream).then((x: any[]) => {
-      // console.log(x)
+    const timedSolve = (puzzle: Puzzle) => {
+      const startTime = process.hrtime.bigint();
+      const result = solve(puzzle);
+      const endTime = process.hrtime.bigint();
+      const executionTime = (endTime - startTime)/1000000n;
+      console.log(`Execution time: ${executionTime}`)
+      return result;
+    }
+
+    const runTest = (t: TestData) => {
+      // const solution: Option<SolutionTree> = timedSolve(t.puzzle);
+      const {result, executionTime} = timef(() => solve(t.puzzle))
+      const expectedSolution: Option<SolutionTree> = O.some(t.solution);
+      expect(result).toEqual(expectedSolution);
+      return executionTime;
+    };
+
+    return neatCsv(readStream).then((dataIn: any[]) => {
+      const testData: Either<Error, TestData>[] = dataIn.map(x => parse(x));
+
+      const results: Either<Error, bigint>[] = testData.map(x => E.map(runTest)(x));
+      const timings = results.map(e => E.getOrElse(() => 0n)(e));
+      console.log({timings});
     });
 
   });
